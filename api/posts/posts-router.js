@@ -29,39 +29,45 @@ router.get('/', async (req, res) => {
   });
   
   router.post('/', (req, res) => {
-        console.log(req.body);
         const { title, contents } = req.body
         if (!title || !contents ) {
             res.status(400).json({ message: "Please provide title and contents for the post" })
         } else {
             Post.insert({title, contents})
-            .then(stuff => {
-                console.log(stuff);
-                res.status(201).json(stuff);
-            })
-            .catch(err => {
-                res.status(500).json({ message: "There was an error while saving the post to the database" })
-            })
+                .then(({ id }) => {
+                    return Post.findById(id)
+                })
+                .then(post => {
+                    res.status(201).json(post)
+                })
+                .catch(err => {
+                    res.status(500).json({ message: "There was an error while saving the post to the database" })
+                })
         }
   });
 
-  router.put('/:id', async (req,res) => {
-    try {
+  router.put('/:id', (req, res) => {
         const { id } = req.params
-        if (!req.body.title || !req.body.contents ){
+        const { title, contents } = req.body
+        if (!title || !contents ) {
             res.status(400).json({ message: "Please provide title and contents for the post" })
         } 
         else {
-            const post = await Post.update(id, req.body)
-            if (!post) {
-                res.status(404).json({ message: "The post with the specified ID does not exist" })
-            } else {
-                res.status(200).json(post);
+            Post.update(id, req.body)
+                .then(stuff => {
+                    if (!stuff) {
+                        res.status(404).json({ message: "The post with the specified ID does not exist" })
+                    } else {
+                        return Post.findById(id)
+                    }
+                    })
+                .then(post => {
+                    res.status(200).json(post);
+                })
+                .catch(err => {
+                    res.status(500).json({ message: "The post information could not be modified" })
+                })
             }
-        }
-    } catch(err) {
-        res.status(500).json({ message: "The post information could not be modified" })
-    }
 })
 
 router.delete('/:id', async (req, res) => {
